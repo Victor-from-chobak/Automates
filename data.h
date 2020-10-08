@@ -74,8 +74,8 @@ public:
         std::swap(terminal, other.terminal);
     }
 
-    Automat(int _states, int _edges_amount, int _terminal_amount, const Graph& g, const std::vector<bool>& term) : 
-           states(_states), edges_amount(_edges_amount), terminal_amount(_terminal_amount), graph(g), terminal(term) {}
+    Automat(int _states, int _edges_amount, int _terminal_amount, const Graph& _graph, const std::vector<bool>& term) : 
+           states(_states), edges_amount(_edges_amount), terminal_amount(_terminal_amount), graph(_graph), terminal(term) {}
 
     Automat(const Automat& other) : 
             states(other.states), edges_amount(other.edges_amount), terminal_amount(other.terminal_amount), 
@@ -130,48 +130,48 @@ public:
         terminal[vertex] = true;
     }
 
-    void renumber();
+    void renumber_vertexes();
 
 };
 
-std::istream& operator>>(std::istream& in, Automat& A) {
-    in >> A.states >> A.edges_amount >> A.terminal_amount;
-    A.resize(A.states);
+std::istream& operator>>(std::istream& in, Automat& automata) {
+    in >> automata.states >> automata.edges_amount >> automata.terminal_amount;
+    automata.resize(automata.states);
     
-    for (int j = 0; j < A.edges_amount; ++j) {
+    for (int j = 0; j < automata.edges_amount; ++j) {
         int from;
         int to;
         char letter;
         in >> from >> to >> letter;
 
-        A.graph[from].push_back({to, letter});
+        automata.graph[from].push_back({to, letter});
     }
 
-    for (int i = 0; i < A.terminal_amount; ++i) {
+    for (int i = 0; i < automata.terminal_amount; ++i) {
         int vertex;
         in >> vertex;
-        A.terminal[vertex] = true;
+        automata.terminal[vertex] = true;
     }
     
     return in;
 }
 
-std::ostream& operator<<(std::ostream& out, const Automat& A) {
+std::ostream& operator<<(std::ostream& out, const Automat& automata) {
     
-    std::cout << A.states << ' ' << A.edges_amount << ' ' << A.terminal_amount << '\n';
+    std::cout << automata.states << ' ' << automata.edges_amount << ' ' << automata.terminal_amount << '\n';
 
     out << "EDGES\n";
 
-    for (int i = 0; i < A.states; ++i) {
-        for (const edge& edge: A.graph[i]) {
+    for (int i = 0; i < automata.states; ++i) {
+        for (const edge& edge: automata.graph[i]) {
             out << i << ' ' << edge.to << ' ' << edge.letter << '\n';
         }
     }
     
     out << "TERMINAL\n";
 
-    for (int i = 0; i < A.states; ++i) {
-        out << A.terminal[i] << ' ';
+    for (int i = 0; i < automata.states; ++i) {
+        out << automata.terminal[i] << ' ';
     }
 
     out << '\n';
@@ -180,7 +180,7 @@ std::ostream& operator<<(std::ostream& out, const Automat& A) {
 }
 
 
-void Automat::renumber() {
+void Automat::renumber_vertexes() {
     int new_number = 0;
     std::vector<bool> was(states);
     std::queue<int> queue;
