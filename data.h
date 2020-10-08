@@ -11,7 +11,7 @@ public:
     int to = 0;
     char letter = 'a';
     
-    edge(int v, char c) : to(v), letter(c) {}
+    edge(int construct_to, char construct_letter) : to(construct_to), letter(construct_letter) {}
     edge(const edge& other) : to(other.to), letter(other.letter) {}
 
     edge& operator=(const edge& other) {
@@ -23,7 +23,7 @@ public:
     edge(const std::pair<int, char>& other) : to(other.first), letter(other.second) {}
 
     bool operator==(const edge& other) const {
-        return ((to == other.to) && (letter == other.letter));
+        return (to == other.to && letter == other.letter);
     }
 
 };
@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream& out, const edge& object) {
     return out;
 }
 
-class automat {
+class Automat {
 
 public:
 
@@ -61,56 +61,72 @@ public:
     
     Graph graph = {};
     std::vector<bool> terminal = {};
-    int n = 0; //states 
-    int m = 0; // edges
-    int t = 0; //termial
+    int states = 0;
+    int edges_amount = 0;
+    int terminal_amount = 0;
 
-    automat() = default;
-    automat(int _q, int _m, int _t, const Graph& g, const std::vector<bool>& term) : n(_q), m(_m), t(_t), graph(g), terminal(term) {}
-    automat(const automat& other) : n(other.n), m(other.m), t(other.t), graph(other.graph), terminal(other.terminal) {}
-    automat(automat&& other) : n(other.n), m(other.m), t(other.t), graph(std::move(other.graph)), terminal(std::move(other.terminal)) {
-        other.n = 0;
-        other.m = 0;
-        other.t = 0;
+    Automat() = default;
+    void swap(Automat& other) noexcept {
+        std::swap(states, other.states);
+        std::swap(edges_amount, other.edges_amount);
+        std::swap(terminal_amount, other.terminal_amount);
+        std::swap(graph, other.graph);
+        std::swap(terminal, other.terminal);
     }
-    automat& operator=(const automat& other) {
-        graph = other.graph;
-        terminal = other.terminal;
-        n = other.n;
-        m = other.m;
-        t = other.t;
+
+    Automat(int _states, int _edges_amount, int _terminal_amount, const Graph& g, const std::vector<bool>& term) : 
+           states(_states), edges_amount(_edges_amount), terminal_amount(_terminal_amount), graph(g), terminal(term) {}
+
+    Automat(const Automat& other) : 
+            states(other.states), edges_amount(other.edges_amount), terminal_amount(other.terminal_amount), 
+            graph(other.graph), terminal(other.terminal) {}
+
+    Automat(Automat&& other) : 
+        states(other.states), edges_amount(other.edges_amount), terminal_amount(other.terminal_amount), 
+        graph(std::move(other.graph)), terminal(std::move(other.terminal)) {
+
+        other.states = 0;
+        other.edges_amount = 0;
+        other.terminal_amount = 0;
+    }
+
+    Automat& operator=(const Automat& other) {
+        
+        if (this != &other) {
+            Automat(other).swap(*this);
+        }
+
         return *this;
     }
-    automat& operator=(automat&& other) {
-        graph = std::move(other.graph);
-        terminal = std::move(other.terminal);
-        n = other.n;
-        m = other.m;
-        t = other.t;
-        other.n = 0;
-        other.m = 0;
-        other.t = 0;
+
+    Automat& operator=(Automat&& other) {
+        
+        if (this != &other) {
+            Automat(std::move(other)).swap(*this);
+        }
+
         return *this;
     }
 
-    bool operator==(const automat& other) const {
-        return ((n == other.n) && (m == other.m) && (t == other.t) && (graph == other.graph) && (terminal == other.terminal));
+    bool operator==(const Automat& other) const {
+        return ((states == other.states) && (edges_amount == other.edges_amount) && (terminal_amount == other.terminal_amount)
+                && (graph == other.graph) && (terminal == other.terminal));
     }
 
-    void resize(int q) {
-        n = q;
-        graph.resize(q);
-        terminal.resize(q, false);
+    void resize(int new_states_number) {
+        states = new_states_number;
+        graph.resize(new_states_number);
+        terminal.resize(new_states_number, false);
     }
     
     template<typename Edge>
     void add_edge(int vertex, Edge&& edge) {
-        ++m;
+        ++edges_amount;
         graph[vertex].push_back(std::forward<Edge>(edge));
     }
 
     void add_terminal(int vertex) {
-        ++t;
+        ++terminal_amount;
         terminal[vertex] = true;
     }
 
@@ -118,35 +134,35 @@ public:
 
 };
 
-std::istream& operator>>(std::istream& in, automat& A) {
-    in >> A.n >> A.m >> A.t;
-    A.resize(A.n);
+std::istream& operator>>(std::istream& in, Automat& A) {
+    in >> A.states >> A.edges_amount >> A.terminal_amount;
+    A.resize(A.states);
     
-    for (int j = 0; j < A.m; ++j) {
-        int u, v;
-        char c;
-        in >> u >> v >> c;
+    for (int j = 0; j < A.edges_amount; ++j) {
+        int from;
+        int to;
+        char letter;
+        in >> from >> to >> letter;
 
-        A.graph[u].push_back({v, c});
+        A.graph[from].push_back({to, letter});
     }
 
-
-    for (int i = 0; i < A.n; ++i) {
-        int x;
-        in >> x;
-        A.terminal[x] = true;
+    for (int i = 0; i < A.terminal_amount; ++i) {
+        int vertex;
+        in >> vertex;
+        A.terminal[vertex] = true;
     }
     
     return in;
 }
 
-std::ostream& operator<<(std::ostream& out, const automat& A) {
+std::ostream& operator<<(std::ostream& out, const Automat& A) {
     
-    std::cout << A.n << ' ' << A.m << ' ' << A.t << '\n';
+    std::cout << A.states << ' ' << A.edges_amount << ' ' << A.terminal_amount << '\n';
 
     out << "EDGES\n";
 
-    for (int i = 0; i < A.n; ++i) {
+    for (int i = 0; i < A.states; ++i) {
         for (const edge& edge: A.graph[i]) {
             out << i << ' ' << edge.to << ' ' << edge.letter << '\n';
         }
@@ -154,7 +170,7 @@ std::ostream& operator<<(std::ostream& out, const automat& A) {
     
     out << "TERMINAL\n";
 
-    for (int i = 0; i < A.n; ++i) {
+    for (int i = 0; i < A.states; ++i) {
         out << A.terminal[i] << ' ';
     }
 
@@ -164,11 +180,11 @@ std::ostream& operator<<(std::ostream& out, const automat& A) {
 }
 
 
-void automat::renumber() {
+void Automat::renumber() {
     int new_number = 0;
-    std::vector<bool> was(n);
+    std::vector<bool> was(states);
     std::queue<int> queue;
-    std::vector<int> mapping(n, static_cast<int>(DEFAULT)); // new numbers
+    std::vector<int> mapping(states, static_cast<int>(DEFAULT)); // new numbers
 
     queue.push(0);
     was[0] = true;
@@ -192,36 +208,35 @@ void automat::renumber() {
    
     }
     
-    automat new_automat;
-    new_automat.resize(new_number);
+    Automat new_Automat;
+    new_Automat.resize(new_number);
     
-    for (int j = 0; j < n; ++j) {
-        int vertex = mapping[j];
+    for (int node = 0; node < states; ++node) {
+        int vertex = mapping[node];
         
         if (vertex == DEFAULT) {
             continue;
         }
 
-        if (terminal[j]) {
-            new_automat.add_terminal(vertex);
+        if (terminal[node]) {
+            new_Automat.add_terminal(vertex);
         }
 
-        for (const edge& e: graph[j]) {
+        for (const edge& current_edge: graph[node]) {
             
-            int other = mapping[e.to];
-            char letter = e.letter;
-            edge new_e(other, letter);
+            int other = mapping[current_edge.to];
+            char letter = current_edge.letter;
+            edge new_edge(other, letter);
             
             if (other == DEFAULT) {
                 continue;
             }
 
-            new_automat.add_edge(vertex, new_e);
+            new_Automat.add_edge(vertex, new_edge);
         }
     }
     
-    *this = (new_automat);
+    *this = (new_Automat);
 
 }
-
 
