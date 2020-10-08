@@ -7,7 +7,7 @@
 int main() {
     
     std::ifstream fin("test.in");
-    automat aut;
+    Automat aut;
     fin >> aut;
     std::cout << aut;
 
