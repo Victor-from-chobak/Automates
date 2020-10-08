@@ -3,12 +3,12 @@
 
 // # = eps
 
-void  bfs_noeps(Automat& new_automat, const Automat& aut) {
+void  bfs_noeps(Automat& new_automat, const Automat& automata) {
 
-    for (int current_v = 0; current_v < aut.states; ++current_v) {
+    for (int current_v = 0; current_v < automata.states; ++current_v) {
 
         std::set<edge, comp_for_edges> edges;
-        std::vector<bool> was(aut.states, false);
+        std::vector<bool> was(automata.states, false);
     
         std::queue<int> queue;
         was[current_v] = true;
@@ -18,9 +18,9 @@ void  bfs_noeps(Automat& new_automat, const Automat& aut) {
         while (!queue.empty()) {
             int vertex = queue.front();
             queue.pop();
-            is_terminal |= aut.terminal[vertex];
+            is_terminal |= automata.terminal[vertex];
 
-            for (const edge& edge: aut.graph[vertex]) {
+            for (const edge& edge: automata.graph[vertex]) {
                 if (edge.letter != '#') {
                     edges.insert(edge);
                     continue;
@@ -46,13 +46,13 @@ void  bfs_noeps(Automat& new_automat, const Automat& aut) {
 
 }
 
-Automat get_noeps(const Automat& aut) {
+Automat get_noeps(const Automat& automata) {
     
     Automat new_automat;
-    new_automat.resize(aut.states);
+    new_automat.resize(automata.states);
     
-    bfs_noeps(new_automat, aut);
-    new_automat.renumber();
+    bfs_noeps(new_automat, automata);
+    new_automat.renumber_vertexes();
 
     return new_automat;
 }
