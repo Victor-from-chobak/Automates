@@ -1,13 +1,15 @@
 #include "data.h"
 #pragma once
 
-automat get_minimal(const automat& aut, const Graph& rev_graph) {
+using bool_table = std::vector<std::vector<bool> >;
 
-    std::vector<std::vector<bool> > different(aut.n, std::vector<bool>(aut.n, false));
+
+bool_table get_different_vertexes(const Automat& aut, const Graph& rev_graph) {
+    bool_table different(aut.states, std::vector<bool>(aut.states, false));
     std::queue<std::pair<int, int> > queue;
 
-    for (int i = 0; i < aut.n; ++i) {
-        for (int j = i + 1; j < aut.n; ++j) {
+    for (int i = 0; i < aut.states; ++i) {
+        for (int j = i + 1; j < aut.states; ++j) {
             different[i][j] = aut.terminal[i] ^ aut.terminal[j];
             different[j][i] = aut.terminal[i] ^ aut.terminal[j];
             if (different[i][j] ) {
@@ -17,13 +19,11 @@ automat get_minimal(const automat& aut, const Graph& rev_graph) {
     }
 
     while (!queue.empty() ) {
-        std::pair<int, int> p = queue.front();
+        auto [from, to]  = queue.front();
         queue.pop();
-        int u = p.first;
-        int v = p.second;
 
-        for (const edge& edge1: rev_graph[u]) {
-            for (const edge& edge2: rev_graph[v]) {
+        for (const edge& edge1: rev_graph[from]) {
+            for (const edge& edge2: rev_graph[to]) {
                 
                 if (edge1.letter != edge2.letter) {
                     continue;
@@ -40,20 +40,64 @@ automat get_minimal(const automat& aut, const Graph& rev_graph) {
             }
         }
     }
-
     
-    std::vector<int> classes(aut.n, static_cast<int>(automat::DEFAULT));
+    return different;
+}
+
+
+Automat make_automat_on_classes(const Automat& aut, const std::vector<int>& equality_classes) {
+    
+    size_t classes_amount = equality_classes.back();
+    Automat answer;
+    answer.resize(classes_amount);
+
+    std::map<std::pair<int, char>, int> mapping;
+
+    for (int vertex = 0; vertex < aut.states; ++vertex) {
+        for (const edge& edge: aut.graph[vertex]) {
+            int class1 = equality_classes[vertex];
+            int class2 = equality_classes[edge.to];
+            mapping[{class1, edge.letter}] = class2;
+        }
+    }
+    
+    for (const auto& [map_edge, to]: mapping) {
+        const auto [from, letter] = map_edge;
+        edge edge(to, letter);
+        answer.add_edge(from, edge);
+    }
+    
+    std::vector<bool> new_term(classes_amount, false);
+
+    for (int vertex = 0; vertex < aut.states; ++vertex) {
+        int vertex_class = equality_classes[vertex];
+        
+        if (aut.terminal[vertex] && !answer.terminal[vertex_class]) {
+            answer.add_terminal(vertex_class);
+        }
+    }
+
+    return answer;
+
+}
+
+
+Automat get_minimal(const Automat& aut, const Graph& rev_graph) {
+
+    std::vector<std::vector<bool> > different = get_different_vertexes(aut, rev_graph);
+       
+    std::vector<int> equality_classes(aut.states, static_cast<int>(Automat::DEFAULT));
     int current_class = -1;
 
-    for (int i = 0; i < aut.n; ++i) {
-        if (classes[i] != automat::DEFAULT) {
+    for (int i = 0; i < aut.states; ++i) {
+        if (equality_classes[i] != Automat::DEFAULT) {
             continue;
         }
         
         ++current_class;
-        classes[i] = current_class;
-        for (int j = 0; j < aut.n; ++j) {
-            if (classes[j] > -1) {
+        equality_classes[i] = current_class;
+        for (int j = 0; j < aut.states; ++j) {
+            if (equality_classes[j] > -1) {
                 continue;
             }
             
@@ -61,52 +105,24 @@ automat get_minimal(const automat& aut, const Graph& rev_graph) {
                 continue;
             }
 
-            classes[j] = current_class;
+            equality_classes[j] = current_class;
         }
     }
     
+    equality_classes.push_back(current_class + 1);
 
-    automat answer;
-    answer.resize(current_class + 1);
-
-    std::map<std::pair<int, char>, int> mapping;
-
-    for (int v = 0; v < aut.n; ++v) {
-        for (const edge& edge: aut.graph[v]) {
-            int class1 = classes[v];
-            int class2 = classes[edge.to];
-            mapping[{class1, edge.letter}] = class2;
-        }
-    }
-    
-    for (const auto& pairs: mapping) {
-        edge edge(pairs.second, pairs.first.second);
-        answer.add_edge(pairs.first.first, edge);
-    }
-    
-    std::vector<bool> new_term(current_class + 1, false);
-
-    for (int v = 0; v < aut.n; ++v) {
-        int vertex_class = classes[v];
-        
-        if (aut.terminal[v] && !answer.terminal[vertex_class]) {
-            answer.add_terminal(vertex_class);
-        }
-    }
-
-    return answer;
+    return make_automat_on_classes(aut, equality_classes);
 }
 
 
-
-automat get_min_automate(const automat& aut) {
+Automat get_min_automate(const Automat& aut) {
     
     Graph reversed_edges;
-    reversed_edges.resize(aut.n);
+    reversed_edges.resize(aut.states);
     
-    for (int v = 0; v < aut.n; ++v) {
-        for (const edge& cur_edge: aut.graph[v]) {
-            edge rev_edge(v, cur_edge.letter);
+    for (int vertex = 0; vertex < aut.states; ++vertex) {
+        for (const edge& cur_edge: aut.graph[vertex]) {
+            edge rev_edge(vertex, cur_edge.letter);
             reversed_edges[cur_edge.to].push_back(rev_edge);
         }
     }
