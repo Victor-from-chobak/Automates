@@ -2,10 +2,10 @@
 #include <map>
 #pragma once
 
-void determinate_bfs(const automat& aut, automat& new_automate) {
+void determinate_bfs(const Automat& aut, Automat& new_automate) {
     
     std::queue<int> queue;
-    int new_size = (1 << aut.n);
+    int new_size = (1 << aut.states);
     new_automate.resize(new_size);
     queue.push(1);
     std::vector<bool> was(new_size, false);
@@ -17,7 +17,7 @@ void determinate_bfs(const automat& aut, automat& new_automate) {
 
         std::map<char, int> map_masks;
 
-        for (int i = 0; i < aut.n; ++i) {
+        for (int i = 0; i < aut.states; ++i) {
             if (!(mask & (1 << i))) {
                 continue;
             }
@@ -32,31 +32,31 @@ void determinate_bfs(const automat& aut, automat& new_automate) {
             
         }
         
-        for (const auto& pairs: map_masks) {
+        for (const auto& [letter, vertex]: map_masks) {
             
-            edge new_edge(pairs.second, pairs.first);
+            edge new_edge(vertex, letter);
 
             new_automate.add_edge(mask, new_edge);
             
-            if (was[pairs.second]) {
+            if (was[vertex]) {
                 continue;
             }
 
-            queue.push(pairs.second);
-            was[pairs.second] = true;
+            queue.push(vertex);
+            was[vertex] = true;
         }
 
     }
 }
 
 
-automat determinate(const automat& aut) {
+Automat determinate(const Automat& aut) {
     
-    automat new_automate;
+    Automat new_automate;
 
     determinate_bfs(aut, new_automate);
     
-    for (int i = 0; i < new_automate.n - 1; ++i) {
+    for (int i = 0; i < new_automate.states - 1; ++i) {
         new_automate.graph[i] = std::move(new_automate.graph[i + 1]);
         for (edge& edge: new_automate.graph[i]) {
             edge.to -= 1;
@@ -68,3 +68,4 @@ automat determinate(const automat& aut) {
 
     return new_automate;
 }
+
