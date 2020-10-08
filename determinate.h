@@ -2,10 +2,10 @@
 #include <map>
 #pragma once
 
-void determinate_bfs(const Automat& aut, Automat& new_automate) {
+void determinate_bfs(const Automat& automata, Automat& new_automate) {
     
     std::queue<int> queue;
-    int new_size = (1 << aut.states);
+    int new_size = (1 << automata.states);
     new_automate.resize(new_size);
     queue.push(1);
     std::vector<bool> was(new_size, false);
@@ -17,16 +17,16 @@ void determinate_bfs(const Automat& aut, Automat& new_automate) {
 
         std::map<char, int> map_masks;
 
-        for (int i = 0; i < aut.states; ++i) {
+        for (int i = 0; i < automata.states; ++i) {
             if (!(mask & (1 << i))) {
                 continue;
             }
             
-            if (aut.terminal[i]) {
+            if (automata.terminal[i]) {
                 new_automate.add_terminal(mask);
             }
 
-            for (const edge& edge: aut.graph[i]) {
+            for (const edge& edge: automata.graph[i]) {
                 map_masks[edge.letter] |= (1 << edge.to);
             }
             
@@ -50,21 +50,21 @@ void determinate_bfs(const Automat& aut, Automat& new_automate) {
 }
 
 
-Automat determinate(const Automat& aut) {
+Automat determinate(const Automat& automata) {
     
     Automat new_automate;
 
-    determinate_bfs(aut, new_automate);
+    determinate_bfs(automata, new_automate);
     
-    for (int i = 0; i < new_automate.states - 1; ++i) {
-        new_automate.graph[i] = std::move(new_automate.graph[i + 1]);
-        for (edge& edge: new_automate.graph[i]) {
+    for (int state = 0; state < new_automate.states - 1; ++state) {
+        new_automate.graph[state] = std::move(new_automate.graph[state + 1]);
+        for (edge& edge: new_automate.graph[state]) {
             edge.to -= 1;
         }
-        new_automate.terminal[i] = new_automate.terminal[i + 1];
+        new_automate.terminal[state] = new_automate.terminal[state + 1];
     }
 
-    new_automate.renumber();
+    new_automate.renumber_vertexes();
 
     return new_automate;
 }
